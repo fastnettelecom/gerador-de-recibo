@@ -16,6 +16,7 @@
 
 body{
 background:#f3f4f6;
+font-family:"Times New Roman", Times, serif;
 }
 
 .preview-document{
@@ -130,7 +131,7 @@ placeholder="Nº de Autenticação (Opcional)"
 id="cidade"
 class="campo"
 value="Ribeirópolis/SE"
-placeholder="Cidade"
+placeholder="Cidade/UF"
 >
 
 <input
@@ -138,6 +139,15 @@ type="date"
 id="dataPagamento"
 class="campo"
 >
+
+<label style="display:flex;align-items:center;gap:10px;margin-bottom:15px;">
+    <input
+        type="checkbox"
+        id="usarAssinatura"
+        checked
+    >
+    Utilizar assinatura digital
+</label>
 
 <div class="flex flex-wrap gap-3 mt-4">
 
@@ -334,6 +344,8 @@ document.getElementById('cidade').value;
 const data =
 document.getElementById('dataPagamento').value;
 
+const usarAssinatura =
+document.getElementById('usarAssinatura').checked;
 
 document.getElementById('preview')
 .innerHTML = `
@@ -342,7 +354,7 @@ document.getElementById('preview')
 
 <img
 src="${LOGO_URL}"
-style="max-width:180px;margin:auto;"
+style="max-width:130px;margin:auto;"
 >
 
 <h2
@@ -374,7 +386,7 @@ ${gerarTextoRecibo()}
 <div
 style="
 margin-top:60px;
-text-align:right;
+text-align:justify;
 "
 >
 
@@ -383,9 +395,45 @@ ${dataExtenso(data)}
 
 </div>
 
-ASSINATURA_URL}
 
+${usarAssinatura ? `
+<div style="margin-top:80px;text-align:center;">
+    <img
+        src="${ASSINATURA_URL}"
+        style="
+            display:block;
+            width:380px;
+            max-width:100%;
+            margin:0 auto;
+        "
+    >
 </div>
+`
+:
+`
+<div style="margin-top:120px;text-align:center;">
+    <div style="
+        width:280px;
+        margin:0 auto;
+        border-top:1px solid #000;
+    "></div>
+
+    <div style="
+        font-size:14px;
+        margin-top:6px;
+        font-weight:bold;
+    ">
+        FASTNET TELECOM LTDA
+    </div>
+
+    <div style="
+        font-size:12px;
+        margin-top:2px;
+    ">
+        CNPJ: 07.465.986/0001-14
+    </div>
+</div>`
+}
 
 `;
 
@@ -405,15 +453,16 @@ function limparFormulario(){
 
  document.getElementById('formaPagamento').value='';
 
+ document.getElementById('usarAssinatura').checked = true;
+
  document.getElementById('preview').innerHTML=`
  <div class="text-center text-gray-400 mt-20">
- Preencha os campos para visualizar o recibo
+     Preencha os campos para visualizar o recibo
  </div>
  `;
 }
 
 async function carregarImagemBase64(url){
-
  const response = await fetch(url);
  const blob = await response.blob();
 
@@ -446,47 +495,87 @@ doc.addImage(
  'PNG',
  65,
  10,
- 80,
- 25
+ 60,
+ 15
 );
 
-
-let y = 50;
-
-doc.setFont("helvetica","bold");
+doc.setFont("times","bold");
 doc.setFontSize(18);
 doc.text(
 "RECIBO",
 105,
-42,
+50,
 {
 align:'center'
 }
 );
 
-y += 20;
-
+let y = 65;
 /*
 TEXTO
 */
 
-doc.setFont("helvetica","normal");
+doc.setFont("times","normal");
 doc.setFontSize(12);
 
 const texto =
 gerarTextoRecibo();
 
-const linhas =
-doc.splitTextToSize(
-texto,
-170
-);
+const linhas = doc.splitTextToSize(texto, 170);
 
-doc.text(
-linhas,
-20,
-y
-);
+linhas.forEach((linha, index) => {
+
+    if(index === linhas.length - 1){
+
+        doc.text(
+            linha,
+            20,
+            y + (index * 7)
+        );
+
+        return;
+    }
+
+    const palavras = linha.split(' ');
+
+    if(palavras.length <= 1){
+
+        doc.text(
+            linha,
+            20,
+            y + (index * 7)
+        );
+
+        return;
+    }
+
+    const larguraLinha =
+        doc.getTextWidth(linha);
+
+    const larguraMaxima = 170;
+
+    const espacoExtra =
+        (larguraMaxima - larguraLinha) /
+        (palavras.length - 1);
+
+    let x = 20;
+
+    palavras.forEach((palavra) => {
+
+        doc.text(
+            palavra,
+            x,
+            y + (index * 7)
+        );
+
+        x +=
+            doc.getTextWidth(palavra)
+            + doc.getTextWidth(' ')
+            + espacoExtra;
+
+    });
+
+});
 
 y += (linhas.length * 7) + 20;
 
@@ -514,18 +603,53 @@ y += 40;
 /*
 LINHA ASSINATURA
 */
-const assinaturaBase64 =
-await carregarImagemBase64(ASSINATURA_URL);
+const usarAssinatura =
+document.getElementById('usarAssinatura').checked;
 
-doc.addImage(
- assinaturaBase64,
- 'PNG',
- 45,
- y - 10,
- 120,
- 50
+if(usarAssinatura){
+
+    const assinaturaBase64 =
+    await carregarImagemBase64(ASSINATURA_URL);
+
+    doc.addImage(
+    assinaturaBase64,
+    'PNG',
+    50,
+    y - 10,
+    110,
+    60
 );
 
+}else{
+
+    doc.line(
+    55,
+    y + 15,
+    155,
+    y + 15
+);
+
+doc.setFontSize(10);
+
+doc.text(
+    "FASTNET TELECOM LTDA",
+    105,
+    y + 22,
+    {
+        align:'center'
+    }
+);
+doc.setFontSize(9);
+
+doc.text(
+    "CNPJ: 07.465.986/0001-14",
+    105,
+    y + 28,
+    {
+        align:'center'
+    }
+);
+}
 
 /*
 RODAPÉ
@@ -592,7 +716,12 @@ document
 'change',
 atualizarPreview
 );
-
+document
+.getElementById('usarAssinatura')
+.addEventListener(
+'change',
+atualizarPreview
+);
 /*
 DATA PADRÃO
 */
@@ -605,7 +734,7 @@ document
 new Date()
 .toISOString()
 .split('T')[0];
-
+atualizarPreview();
 </script>
 
 <footer class="mt-10 bg-gradient-to-r from-red-600 to-red-700 text-white text-center p-6">
@@ -623,3 +752,4 @@ Sistema Interno de Emissão de Recibos
 
 </body>
 </html>
+
