@@ -421,13 +421,14 @@ z-index:1;
 
 </div>
 
-<div
+<img
+src="${ASSINATURA_URL}"
 style="
-font-weight:bold;
+width:320px;
+margin:auto;
+display:block;
 "
 >
-FASTNET TELECOM LTDA
-</div>
 
 <div>
 CNPJ 07.465.986/0001-14
@@ -575,65 +576,16 @@ doc.addImage(
  20
 );
 
-doc.line(
-60,
-y,
-150,
-y
-);
+const assinaturaBase64 =
+await carregarImagemBase64(ASSINATURA_URL);
 
-y += 7;
-
-doc.setFont(
-"helvetica",
-"bold"
-);
-
-doc.text(
-"FASTNET TELECOM LTDA",
-105,
-y,
-{
-align:'center'
-}
-);
-
-y += 6;
-
-doc.setFont(
-"helvetica",
-"normal"
-);
-
-doc.text(
-"CNPJ 07.465.986/0001-14",
-105,
-y,
-{
-align:'center'
-}
-);
-
-y += 6;
-
-doc.text(
-"Av. Barão do Rio Branco, 48",
-105,
-y,
-{
-align:'center'
-}
-);
-
-y += 6;
-
-doc.text(
-"Ribeirópolis/SE",
-105,
-y,
-{
-align:'center'
-}
+doc.addImage(
+ assinaturaBase64,
+ 'PNG',
+ 55,
+ y - 15,
+ 100,
+ 45
 );
 
 /*
