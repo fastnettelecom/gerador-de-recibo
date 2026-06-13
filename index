@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Recibo Fastnet Telecom</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+
+body{
+background:#f3f4f6;
+}
+
+.preview-document{
+background:white;
+padding:40px;
+border-radius:15px;
+box-shadow:0 10px 30px rgba(0,0,0,.1);
+min-height:700px;
+}
+
+.campo{
+width:100%;
+padding:12px;
+border:1px solid #d1d5db;
+border-radius:10px;
+margin-bottom:12px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="max-w-7xl mx-auto p-6">
+
+<div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+
+<div class="bg-gradient-to-r from-red-600 to-red-700 p-6 text-center">
+
+<img
+src="https://lh3.googleusercontent.com/d/1uD19Ne-GTmhgBC0swzwyOSZ30mmmflCS"
+style="max-width:180px;margin:auto;"
+>
+
+<h1 class="text-3xl font-bold text-white mt-4">
+Gerador de Recibos
+</h1>
+
+
+</div>
+
+<div class="grid lg:grid-cols-2 gap-6 p-6">
+
+<!-- FORMULÁRIO -->
+
+<div>
+
+<h2 class="text-2xl font-bold mb-4">
+Dados do Recibo
+</h2>
+
+<input
+id="nome"
+class="campo"
+placeholder="Nome ou Razão Social"
+>
+
+<input
+id="documento"
+class="campo"
+placeholder="CPF ou CNPJ"
+>
+
+<input
+id="valor"
+class="campo"
+placeholder="Valor Recebido"
+>
+
+<textarea
+id="referente"
+class="campo"
+rows="3"
+placeholder="Referente a..."
+></textarea>
+
+<select
+id="formaPagamento"
+class="campo"
+>
+
+<option value="">Forma de Pagamento</option>
+
+<option>PIX</option>
+<option>TED</option>
+<option>DOC</option>
+<option>Transferência Bancária</option>
+<option>Depósito Bancário</option>
+<option>Boleto Bancário</option>
+<option>Cartão de Débito</option>
+<option>Cartão de Crédito</option>
+<option>Dinheiro</option>
+<option>Cheque</option>
+<option>Outros</option>
+
+</select>
+
+<input
+id="notaFiscal"
+class="campo"
+placeholder="Nº da Nota Fiscal (Opcional)"
+>
+
+<input
+id="autenticacao"
+class="campo"
+placeholder="Nº de Autenticação (Opcional)"
+>
+
+<input
+id="cidade"
+class="campo"
+value="Ribeirópolis/SE"
+placeholder="Cidade"
+>
+
+<input
+type="date"
+id="dataPagamento"
+class="campo"
+>
+
+<div class="flex flex-wrap gap-3 mt-4">
+
+<button
+onclick="atualizarPreview()"
+class="bg-blue-600 text-white px-5 py-3 rounded-xl"
+>
+Visualizar
+</button>
+
+<button
+onclick="gerarPDF()"
+class="bg-green-600 text-white px-5 py-3 rounded-xl"
+>
+Gerar PDF
+</button>
+
+<button
+onclick="limparFormulario()"
+class="bg-gray-600 text-white px-5 py-3 rounded-xl"
+>
+Limpar
+</button>
+
+</div>
+
+</div>
+
+<!-- PREVIEW -->
+
+<div>
+
+<h2 class="text-2xl font-bold mb-4">
+Pré-visualização
+</h2>
+
+<div
+id="preview"
+class="preview-document"
+>
+
+<div class="text-center text-gray-400 mt-20">
+Preencha os campos para visualizar o recibo
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+const LOGO_URL =
+"https://raw.githubusercontent.com/fastnettelecom/gerador-de-recibo/main/logo.png";
+/*
+SUBSTITUA DEPOIS
+PELA URL DA ASSINATURA
+*/
+
+const ASSINATURA_URL =
+"https://raw.githubusercontent.com/fastnettelecom/gerador-de-recibo/main/assinatura.png";
+
+function formatarValor(valor){
+
+if(!valor) return "0,00";
+
+valor = valor.replace(/\D/g,'');
+
+valor = (Number(valor)/100)
+.toLocaleString(
+'pt-BR',
+{
+minimumFractionDigits:2,
+maximumFractionDigits:2
+}
+);
+
+return valor;
+
+}
+
+document
+.getElementById('valor')
+.addEventListener('input',function(){
+
+this.value =
+formatarValor(this.value);
+
+});
+
+function dataExtenso(data){
+
+if(!data) return '';
+
+const meses = [
+'janeiro',
+'fevereiro',
+'março',
+'abril',
+'maio',
+'junho',
+'julho',
+'agosto',
+'setembro',
+'outubro',
+'novembro',
+'dezembro'
+];
+
+const d = new Date(data);
+
+return `${d.getDate()} de ${
+meses[d.getMonth()]
+} de ${
+d.getFullYear()
+}`;
+
+}
+
+function gerarTextoRecibo(){
+
+const nome =
+document.getElementById('nome').value;
+
+const documento =
+document.getElementById('documento').value;
+
+const valor =
+document.getElementById('valor').value;
+
+const referente =
+document.getElementById('referente').value;
+
+const formaPagamento =
+document.getElementById('formaPagamento').value;
+
+const notaFiscal =
+document.getElementById('notaFiscal').value;
+
+const autenticacao =
+document.getElementById('autenticacao').value;
+
+let texto =
+`A FASTNET TELECOM LTDA, inscrita no CNPJ sob nº 07.465.986/0001-14, declara para os devidos fins que recebeu de ${nome}`;
+
+if(documento){
+
+texto += ` (${documento})`;
+
+}
+
+texto += ` a quantia de R$ ${valor}`;
+
+if(formaPagamento){
+
+texto += ` através de ${formaPagamento}`;
+
+}
+
+texto += `.`;
+
+if(notaFiscal){
+
+texto += ` O recebimento refere-se à Nota Fiscal nº ${notaFiscal}.`;
+
+}
+
+if(referente){
+
+texto += ` Referente a: ${referente}.`;
+
+}
+
+if(autenticacao){
+
+texto += ` Número de autenticação da transação: ${autenticacao}.`;
+
+}
+
+return texto;
+
+}
+
+function atualizarPreview(){
+
+const cidade =
+document.getElementById('cidade').value;
+
+const data =
+document.getElementById('dataPagamento').value;
+
+
+document.getElementById('preview')
+.innerHTML = `
+
+<div class="text-center">
+
+<img
+src="${LOGO_URL}"
+style="max-width:180px;margin:auto;"
+>
+
+<h2
+style="
+font-size:28px;
+font-weight:bold;
+margin-top:20px;
+"
+>
+RECIBO
+</h2>
+
+
+</div>
+
+<div
+style="
+margin-top:40px;
+line-height:2;
+font-size:16px;
+text-align:justify;
+"
+>
+
+${gerarTextoRecibo()}
+
+</div>
+
+<div
+style="
+margin-top:60px;
+text-align:right;
+"
+>
+
+${cidade},
+${dataExtenso(data)}
+
+</div>
+
+<div
+style="
+margin-top:80px;
+text-align:center;
+"
+>
+
+<img
+src="${ASSINATURA_URL}"
+style="
+max-width:250px;
+margin:auto;
+"
+>
+
+<hr
+style="
+margin-top:10px;
+"
+>
+
+<div
+style="
+font-weight:bold;
+"
+>
+FASTNET TELECOM LTDA
+</div>
+
+<div>
+CNPJ 07.465.986/0001-14
+</div>
+
+</div>
+
+`;
+
+}
+
+function limparFormulario(){
+
+ document
+ .querySelectorAll('input, textarea')
+ .forEach(el=>{
+
+   if(el.id !== 'cidade'){
+      el.value='';
+   }
+
+ });
+
+ document.getElementById('formaPagamento').value='';
+
+ document.getElementById('preview').innerHTML=`
+ <div class="text-center text-gray-400 mt-20">
+ Preencha os campos para visualizar o recibo
+ </div>
+ `;
+}
+
+async function carregarImagemBase64(url){
+
+ const response = await fetch(url);
+ const blob = await response.blob();
+
+ return new Promise((resolve)=>{
+
+   const reader = new FileReader();
+
+   reader.onloadend = ()=>resolve(reader.result);
+
+   reader.readAsDataURL(blob);
+
+ });
+
+}
+async function gerarPDF(){
+
+atualizarPreview();
+
+const { jsPDF } = window.jspdf;
+
+const doc = new jsPDF({
+orientation:'portrait',
+unit:'mm',
+format:'a4'
+});
+
+const logoBase64 = await carregarImagemBase64(LOGO_URL);
+doc.addImage(
+ logoBase64,
+ 'PNG',
+ 65,
+ 10,
+ 80,
+ 25
+);
+
+
+let y = 50;
+
+doc.setFont("helvetica","bold");
+doc.setFontSize(18);
+doc.text(
+"RECIBO",
+105,
+42,
+{
+align:'center'
+}
+);
+
+y += 20;
+
+/*
+TEXTO
+*/
+
+doc.setFont("helvetica","normal");
+doc.setFontSize(12);
+
+const texto =
+gerarTextoRecibo();
+
+const linhas =
+doc.splitTextToSize(
+texto,
+170
+);
+
+doc.text(
+linhas,
+20,
+y
+);
+
+y += (linhas.length * 7) + 20;
+
+/*
+LOCAL E DATA
+*/
+
+const cidade =
+document.getElementById('cidade').value;
+
+const data =
+document.getElementById('dataPagamento').value;
+
+doc.text(
+`${cidade}, ${dataExtenso(data)}`,
+190,
+y,
+{
+align:'right'
+}
+);
+
+y += 40;
+
+/*
+LINHA ASSINATURA
+*/
+
+doc.line(
+60,
+y,
+150,
+y
+);
+
+y += 7;
+
+doc.setFont(
+"helvetica",
+"bold"
+);
+
+doc.text(
+"FASTNET TELECOM LTDA",
+105,
+y,
+{
+align:'center'
+}
+);
+
+y += 6;
+
+doc.setFont(
+"helvetica",
+"normal"
+);
+
+doc.text(
+"CNPJ 07.465.986/0001-14",
+105,
+y,
+{
+align:'center'
+}
+);
+
+y += 6;
+
+doc.text(
+"Av. Barão do Rio Branco, 48",
+105,
+y,
+{
+align:'center'
+}
+);
+
+y += 6;
+
+doc.text(
+"Ribeirópolis/SE",
+105,
+y,
+{
+align:'center'
+}
+);
+
+/*
+RODAPÉ
+*/
+
+doc.setFontSize(8);
+
+doc.text(
+"Documento gerado automaticamente pelo sistema Fastnet Telecom",
+105,
+285,
+{
+align:'center'
+}
+);
+
+/*
+SALVA PDF
+*/
+
+const agora = new Date();
+
+const dataArquivo =
+agora.toISOString().slice(0,10);
+
+const horaArquivo =
+agora.toTimeString().slice(0,8).replace(/:/g,'-');
+
+doc.save(
+`recibo-${dataArquivo}-${horaArquivo}.pdf`
+);
+}
+
+/*
+ATUALIZA PREVIEW
+EM TEMPO REAL
+*/
+
+[
+'nome',
+'documento',
+'valor',
+'referente',
+'notaFiscal',
+'autenticacao',
+'cidade',
+'dataPagamento'
+].forEach(id=>{
+
+document
+.getElementById(id)
+.addEventListener(
+'input',
+atualizarPreview
+);
+
+});
+
+document
+.getElementById(
+'formaPagamento'
+)
+.addEventListener(
+'change',
+atualizarPreview
+);
+
+/*
+DATA PADRÃO
+*/
+
+document
+.getElementById(
+'dataPagamento'
+)
+.value =
+new Date()
+.toISOString()
+.split('T')[0];
+
+</script>
+
+<footer class="mt-10 bg-gradient-to-r from-red-600 to-red-700 text-white text-center p-6">
+
+
+<p class="text-sm mt-2">
+Sistema Interno de Emissão de Recibos
+</p>
+
+<div class="mt-4 text-xs">
+© Fastnet Telecom
+</div>
+
+</footer>
+
+</body>
+</html>
