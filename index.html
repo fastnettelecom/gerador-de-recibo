@@ -262,12 +262,12 @@ const meses = [
 'dezembro'
 ];
 
-const d = new Date(data);
+const [ano, mes, dia] = data.split('-');
 
-return `${d.getDate()} de ${
-meses[d.getMonth()]
+return `${Number(dia)} de ${
+meses[Number(mes) - 1]
 } de ${
-d.getFullYear()
+ano
 }`;
 
 }
